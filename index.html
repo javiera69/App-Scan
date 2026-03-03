@@ -99,7 +99,7 @@
     <div id="root">
       <div class="initial-loader">
         <div class="spinner"></div>
-        <p>Loading DocuMind...</p>
+        <p>Cargando DocuMind...</p>
       </div>
     </div>
 
@@ -139,14 +139,14 @@
             contents: {
               parts: [
                 { inlineData: { mimeType: mimeType, data: base64Data } },
-                { text: "Transcribe the text from this document exactly as it appears. Maintain the structure (lists, headers) using Markdown. Do not include any intro or outro text." }
+                { text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." }
               ]
             }
           });
-          return response.text || "No text could be extracted.";
+          return response.text || "No se pudo extraer ningún texto.";
         } catch (error) {
           console.error("Gemini OCR Error:", error);
-          throw new Error("Failed to extract text.");
+          throw new Error("Error al extraer el texto.");
         }
       };
 
@@ -155,7 +155,7 @@
           const ai = getAI();
           const modelId = 'gemini-3-pro-preview';
           
-          const parts = [{ text: `Analyze this document content:\n\n${text}\n\nProvide a structured summary including:\n1. Document Type\n2. Key Dates\n3. Main Entities (People/Companies)\n4. Action Items or Summary` }];
+          const parts = [{ text: `Analiza el contenido de este documento:\n\n${text}\n\nProporciona un resumen estructurado que incluya:\n1. Tipo de Documento\n2. Fechas Clave\n3. Entidades Principales (Personas/Empresas)\n4. Tareas Pendientes o Resumen` }];
 
           if (base64Data && mimeType) {
             parts.unshift({
@@ -171,10 +171,10 @@
             }
           });
 
-          return response.text || "Analysis failed.";
+          return response.text || "El análisis falló.";
         } catch (error) {
           console.error("Gemini Analysis Error:", error);
-          throw new Error("Failed to analyze the document.");
+          throw new Error("Error al analizar el documento.");
         }
       };
 
@@ -222,9 +222,9 @@
               <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm">
                 <FileText size={40} />
               </div>
-              <h2 className="text-2xl font-bold text-slate-800">Scan Document</h2>
+              <h2 className="text-2xl font-bold text-slate-800">Escanear Documento</h2>
               <p className="text-slate-500 max-w-xs mx-auto">
-                Capture a photo or upload a PDF to extract text and analyze content.
+                Captura una foto o sube un PDF para extraer texto y analizar el contenido.
               </p>
             </div>
 
@@ -234,7 +234,7 @@
                 className="w-full bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all text-white font-semibold py-4 px-6 rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-blue-200"
               >
                 <Camera size={24} />
-                <span>Use Camera</span>
+                <span>Usar Cámara</span>
               </button>
 
               <button
@@ -242,7 +242,7 @@
                 className="w-full bg-white hover:bg-slate-50 active:scale-95 transition-all text-slate-700 font-semibold py-4 px-6 rounded-2xl flex items-center justify-center gap-3 shadow-md border border-slate-100"
               >
                 <Upload size={24} />
-                <span>Upload File</span>
+                <span>Subir Archivo</span>
               </button>
             </div>
 
@@ -273,7 +273,7 @@
             
             <div className="space-y-3">
               <h3 className="text-xl font-semibold text-slate-800">
-                {state.status === 'thinking' ? 'Deep Analysis...' : 'Processing Document...'}
+                {state.status === 'thinking' ? 'Análisis Profundo...' : 'Procesando Documento...'}
               </h3>
               <p className="text-slate-500 text-sm max-w-xs mx-auto">
                 {state.message}
@@ -283,7 +283,7 @@
             {state.status === 'thinking' && (
               <div className="px-4 py-2 bg-purple-50 text-purple-700 text-xs font-medium rounded-full border border-purple-100 flex items-center gap-2">
                 <Loader2 size={12} className="animate-spin" />
-                Thinking Budget Active
+                Presupuesto de Pensamiento Activo
               </div>
             )}
           </div>
@@ -321,7 +321,7 @@
               await navigator.share({
                 files: [file],
                 title: doc.title,
-                text: 'Scanned document from DocuMind',
+                text: 'Documento escaneado de DocuMind',
               });
               return;
             } catch (err) {
@@ -356,7 +356,7 @@
               </button>
               <h1 className="font-semibold text-slate-800 truncate max-w-[200px]">{doc.title}</h1>
               <button onClick={handleShare} className="p-2 -mr-2 text-blue-600 font-medium">
-                Share
+                Compartir
               </button>
             </div>
 
@@ -370,7 +370,7 @@
                   }`}
                 >
                   <FileText size={16} />
-                  Original Text
+                  Texto Original
                 </button>
                 <button
                   onClick={() => {
@@ -382,7 +382,7 @@
                   }`}
                 >
                   {isAnalyzing ? <Sparkles size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                  AI Analysis
+                  Análisis IA
                 </button>
               </div>
             </div>
@@ -396,13 +396,13 @@
                    isAnalyzing ? (
                     <div className="flex flex-col items-center justify-center h-48 text-purple-600 space-y-3">
                       <Sparkles className="animate-spin" size={32} />
-                      <p className="text-sm font-medium">Analyzing with Gemini Pro...</p>
-                      <p className="text-xs text-purple-400">Thinking budget: 32k tokens</p>
+                      <p className="text-sm font-medium">Analizando con Gemini Pro...</p>
+                      <p className="text-xs text-purple-400">Presupuesto de pensamiento: 32k tokens</p>
                     </div>
                   ) : (
                     doc.analysis || (
                       <div className="text-center text-slate-400 py-10">
-                        <p>Tap "AI Analysis" to summarize and extract insights.</p>
+                        <p>Toca "Análisis IA" para resumir y extraer información.</p>
                       </div>
                     )
                   )
@@ -417,18 +417,18 @@
                   onClick={handleCopy}
                   className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 font-semibold py-3 rounded-xl transition-colors"
                 >
-                  {copied ? <span className="text-green-600">Copied!</span> : <><Copy size={18} /> Copy Text</>}
+                  {copied ? <span className="text-green-600">¡Copiado!</span> : <><Copy size={18} /> Copiar Texto</>}
                 </button>
                 <button
                   onClick={handleSaveToDrive}
                   className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold py-3 rounded-xl transition-colors shadow-blue-200 shadow-lg"
                 >
                   <Cloud size={18} />
-                  Save to Drive
+                  Guardar en Drive
                 </button>
               </div>
               <p className="text-center text-xs text-slate-400 mt-3">
-                Opens share sheet. Select "Drive" or "Save to Files".
+                Abre el menú de compartir. Selecciona "Drive" o "Guardar en Archivos".
               </p>
             </div>
           </div>
@@ -462,13 +462,13 @@
 
         const handleFileSelected = async (file) => {
           setView('PROCESSING');
-          setProcessing({ status: 'uploading', message: 'Reading file...' });
+          setProcessing({ status: 'uploading', message: 'Leyendo archivo...' });
 
           try {
             const base64Data = await fileToBase64(file);
             setRawFile({ data: base64Data, mimeType: file.type });
             
-            setProcessing({ status: 'ocr', message: 'Extracting text with Gemini Vision...' });
+            setProcessing({ status: 'ocr', message: 'Extrayendo texto con Gemini Vision...' });
             
             const text = await extractTextFromDocument(base64Data, file.type);
             
@@ -487,7 +487,7 @@
 
           } catch (error) {
             console.error(error);
-            setProcessing({ status: 'error', message: 'Failed to process document. Please try again.' });
+            setProcessing({ status: 'error', message: 'Error al procesar el documento. Por favor, inténtalo de nuevo.' });
             setTimeout(() => setView('HOME'), 3000);
           }
         };
@@ -507,7 +507,7 @@
             setDocuments(prev => prev.map(d => d.id === updatedDoc.id ? updatedDoc : d));
           } catch (error) {
             console.error(error);
-            alert("Analysis failed. Please check your API key quota.");
+            alert("El análisis falló. Por favor, comprueba tu cuota de la clave API.");
           }
         };
 
@@ -526,14 +526,14 @@
                 </div>
                 <h1 className="text-2xl font-bold text-slate-800 tracking-tight">DocuMind</h1>
               </div>
-              <p className="text-slate-500 text-sm font-medium">AI-Powered Document Scanner</p>
+              <p className="text-slate-500 text-sm font-medium">Escáner de Documentos con IA</p>
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <div className="flex items-center justify-between px-2">
                 <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
                   <Clock size={18} className="text-slate-400" />
-                  Recent Scans
+                  Escaneos Recientes
                 </h2>
               </div>
 
@@ -542,7 +542,7 @@
                   <div className="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center">
                     <FileText size={32} className="text-slate-400" />
                   </div>
-                  <p className="text-slate-500">No documents scanned yet.</p>
+                  <p className="text-slate-500">Aún no hay documentos escaneados.</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -578,7 +578,7 @@
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-blue-200 flex items-center justify-center gap-2 transition-transform active:scale-95"
               >
                 <Plus size={24} strokeWidth={3} />
-                <span>Scan New Document</span>
+                <span>Escanear Nuevo Documento</span>
               </button>
             </div>
           </div>
@@ -594,7 +594,7 @@
                    <button onClick={() => setView('HOME')} className="p-2 -ml-2 text-slate-600 hover:text-slate-900">
                      <ArrowLeft size={24} />
                    </button>
-                   <span className="font-semibold ml-2">New Scan</span>
+                   <span className="font-semibold ml-2">Nuevo Escaneo</span>
                  </header>
                  <div className="flex-1">
                    <Scanner onFileSelected={handleFileSelected} />
