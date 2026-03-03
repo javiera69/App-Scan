@@ -4,8 +4,8 @@ import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share,
 
 // --- HELPERS ---
 
-const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => {
@@ -218,7 +218,7 @@ const ResultView = ({ doc, onBack, onAnalyze, isAnalyzing }) => {
                         isAnalyzing ? (
                             <div className="flex flex-col items-center justify-center h-48 text-purple-600 space-y-3">
                                 <Sparkles className="animate-spin" size={32} />
-                                <p className="text-sm font-medium">Analizando con Gemini Pro...</p>
+                                <p className="text-sm font-medium">Analizando con IA...</p>
                                 <p className="text-xs text-purple-400">Presupuesto de pensamiento: 32k tokens</p>
                             </div>
                         ) : (

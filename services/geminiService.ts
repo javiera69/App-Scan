@@ -41,7 +41,7 @@ export const extractTextFromDocument = async (base64Data: string, mimeType: stri
 
     return callGeminiWithRetry(async () => {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-1.5-flash',
             contents: [
                 {
                     role: 'user',
@@ -70,7 +70,7 @@ export const analyzeDocumentContent = async (text: string, base64Data?: string, 
         }
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
+            model: 'gemini-1.5-flash',
             contents: [
                 {
                     role: 'user',
