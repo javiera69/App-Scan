@@ -115,7 +115,7 @@ const extractTextWithGroq = async (base64Data: string, mimeType: string): Promis
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'llama-3.2-11b-vision-preview',
+                model: 'llama-3.2-90b-vision-preview',
                 messages: [
                     {
                         role: 'user',
@@ -159,7 +159,7 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'llama-3.2-11b-vision-preview',
+                model: 'llama-3.2-90b-vision-preview',
                 messages: [{ role: 'user', content }],
                 temperature: 0.1,
                 max_tokens: 4096

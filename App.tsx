@@ -345,6 +345,24 @@ const App = () => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [provider, setProvider] = useState<AIProvider>('gemini');
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [hasKeys, setHasKeys] = useState({ gemini: true, groq: true });
+
+    useEffect(() => {
+        const checkKeys = () => {
+            const gKey = localStorage.getItem('manual_gemini_api_key') ||
+                // @ts-ignore
+                (typeof __GEMINI_API_KEY__ !== 'undefined' ? __GEMINI_API_KEY__ : '') || '';
+            const grKey = localStorage.getItem('manual_groq_api_key') ||
+                // @ts-ignore
+                (typeof __GROQ_API_KEY__ !== 'undefined' ? __GROQ_API_KEY__ : '') || '';
+
+            setHasKeys({
+                gemini: gKey.trim() !== '' && gKey !== 'undefined',
+                groq: grKey.trim() !== '' && grKey !== 'undefined'
+            });
+        };
+        checkKeys();
+    }, [isSettingsOpen]);
 
     useEffect(() => {
         const saved = localStorage.getItem('documind_scans');
@@ -452,17 +470,29 @@ const App = () => {
                 <div className="mt-6 flex bg-slate-100 p-1 rounded-xl">
                     <button
                         onClick={() => setProvider('gemini')}
-                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${provider === 'gemini' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${provider === 'gemini' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'}`}
                     >
                         Gemini 2.0
+                        {!hasKeys.gemini && <AlertCircle size={12} className="text-red-500" />}
                     </button>
                     <button
                         onClick={() => setProvider('groq')}
-                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${provider === 'groq' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-400'}`}
+                        className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-2 ${provider === 'groq' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-400'}`}
                     >
                         Groq (Llama 3.2)
+                        {!hasKeys.groq && <AlertCircle size={12} className="text-red-500" />}
                     </button>
                 </div>
+
+                {!hasKeys[provider] && (
+                    <button
+                        onClick={() => setIsSettingsOpen(true)}
+                        className="mt-4 w-full bg-red-50 border border-red-100 text-red-600 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 animate-pulse"
+                    >
+                        <AlertCircle size={16} />
+                        Falta Clave API para {provider === 'gemini' ? 'Gemini' : 'Groq'}. Configurar ahora.
+                    </button>
+                )}
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
