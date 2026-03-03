@@ -104,45 +104,74 @@ const analyzeWithGemini = async (text: string, base64Data?: string, mimeType?: s
 
 // --- GROQ IMPLEMENTATION ---
 
-const extractTextWithGroq = async (base64Data: string, mimeType: string): Promise<string> => {
+const GROQ_MODELS = [
+    'llama-3.2-11b-vision-preview',
+    'meta-llama/llama-4-scout-17b-16e-instruct',
+    'llava-v1.5-7b-4096-preview'
+];
+
+const callGroqWithFallback = async (payload: any): Promise<any> => {
     const apiKey = getApiKey('groq');
+    let lastError: any;
 
-    return callWithRetry(async () => {
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'llama-3.2-11b-vision-instruct',
-                messages: [
-                    {
-                        role: 'user',
-                        content: [
-                            { type: 'text', text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." },
-                            { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
-                        ]
-                    }
-                ],
-                temperature: 0.1,
-                max_tokens: 4096
-            })
-        });
+    for (const model of GROQ_MODELS) {
+        try {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    ...payload,
+                    model: model
+                })
+            });
 
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'Error en Groq API');
+            if (response.status === 404 || response.status === 400) {
+                const errorData = await response.json();
+                console.warn(`Groq model ${model} failed (${response.status}): ${errorData.error?.message}. Trying next...`);
+                lastError = new Error(errorData.error?.message || `Model ${model} not found`);
+                continue;
+            }
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'Error en Groq API');
+            }
+
+            return await response.json();
+        } catch (e: any) {
+            lastError = e;
+            if (e.message?.includes('decommissioned') || e.message?.includes('not found') || e.message?.includes('does not exist')) {
+                continue;
+            }
+            throw e;
         }
+    }
+    throw lastError || new Error("No se pudo encontrar un modelo de Groq compatible.");
+};
 
-        const data = await response.json();
+const extractTextWithGroq = async (base64Data: string, mimeType: string): Promise<string> => {
+    return callWithRetry(async () => {
+        const data = await callGroqWithFallback({
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: "Transcribe el texto de este documento exactamente como aparece. Mantén la estructura (listas, encabezados) usando Markdown. No incluyas ningún texto de introducción o cierre." },
+                        { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } }
+                    ]
+                }
+            ],
+            temperature: 0.1,
+            max_tokens: 4096
+        });
         return data.choices[0]?.message?.content || "No se pudo extraer ningún texto.";
     });
 };
 
 const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: string): Promise<string> => {
-    const apiKey = getApiKey('groq');
-
     return callWithRetry(async () => {
         const content: any[] = [
             { type: 'text', text: `Analiza el contenido de este documento:\n\n${text}\n\nProporciona un resumen estructurado que incluya:\n1. Tipo de Documento\n2. Fechas Clave\n3. Entidades Principales (Personas/Empresas)\n4. Tareas Pendientes o Resumen` }
@@ -152,26 +181,11 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
             content.push({ type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Data}` } });
         }
 
-        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'llama-3.2-11b-vision-instruct',
-                messages: [{ role: 'user', content }],
-                temperature: 0.1,
-                max_tokens: 4096
-            })
+        const data = await callGroqWithFallback({
+            messages: [{ role: 'user', content }],
+            temperature: 0.1,
+            max_tokens: 4096
         });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error?.message || 'Error en Groq API');
-        }
-
-        const data = await response.json();
         return data.choices[0]?.message?.content || "El análisis falló.";
     });
 };
