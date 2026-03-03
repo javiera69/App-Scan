@@ -9,13 +9,16 @@ let genAIInstance = null;
 const getGenAI = () => {
     if (!genAIInstance) {
         // @ts-ignore
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || window.__GEMINI_API_KEY__ || '';
 
-        if (!apiKey || apiKey === 'undefined') {
-            throw new Error("Clave API no encontrada. Por favor, verifica los Secrets de GitHub.");
+        console.log("Debug - API Key length:", apiKey ? apiKey.length : 0);
+        console.log("Debug - API Key prefix:", apiKey ? apiKey.substring(0, 4) + "..." : "empty");
+
+        if (!apiKey || apiKey === 'undefined' || apiKey.trim() === '') {
+            throw new Error("Clave API no encontrada o vacía. Por favor, verifica los Secrets de GitHub (GEMINI_API_KEY) y que el despliegue se haya completado correctamente.");
         }
 
-        genAIInstance = new GoogleGenAI(apiKey);
+        genAIInstance = new GoogleGenAI(apiKey.trim());
     }
     return genAIInstance;
 };
@@ -48,6 +51,7 @@ const analyzeDocumentContent = async (text, base64Data, mimeType) => {
         ];
 
         if (base64Data && mimeType) {
+            // @ts-ignore
             promptParts.unshift({
                 inlineData: { mimeType: mimeType, data: base64Data }
             });
