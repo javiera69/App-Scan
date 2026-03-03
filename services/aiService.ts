@@ -104,10 +104,12 @@ const analyzeWithGemini = async (text: string, base64Data?: string, mimeType?: s
 
 // --- GROQ IMPLEMENTATION ---
 
-// Models confirmed active as of March 2026 (from Groq console)
+// Models confirmed active with vision/image support on Groq
 const GROQ_VISION_MODELS = [
     'meta-llama/llama-4-scout-17b-16e-instruct',
     'meta-llama/llama-4-maverick-17b-128e-instruct',
+    'llama-3.2-11b-vision-preview',
+    'llama-3.2-90b-vision-preview',
 ];
 
 const callGroqWithFallback = async (buildPayload: (model: string) => any): Promise<any> => {
@@ -143,7 +145,8 @@ const callGroqWithFallback = async (buildPayload: (model: string) => any): Promi
             lastError = e;
             const shouldContinue = e.message?.includes('decommissioned')
                 || e.message?.includes('not found')
-                || e.message?.includes('does not exist');
+                || e.message?.includes('does not exist')
+                || e.message?.includes('invalid image data');
             if (shouldContinue) continue;
             throw e;
         }
