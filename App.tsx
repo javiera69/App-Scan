@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { extractTextFromDocument, analyzeDocumentContent, AIProvider } from './services/aiService';
 import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share, ArrowLeft, Download, Cloud, ChevronRight, Plus, Clock, Settings, X, Check, AlertCircle } from 'lucide-react';
+import TokenDisplay from './components/TokenDisplay';
 
 // --- HELPERS ---
 
@@ -484,7 +485,7 @@ const App = () => {
                     </button>
                 </div>
 
-                {!hasKeys[provider] && (
+                    {!hasKeys[provider] && (
                     <button
                         onClick={() => setIsSettingsOpen(true)}
                         className="mt-4 w-full bg-red-50 border border-red-100 text-red-600 py-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 animate-pulse"
@@ -493,6 +494,8 @@ const App = () => {
                         Falta Clave API para {provider === 'gemini' ? 'Gemini' : 'Groq'}. Configurar ahora.
                     </button>
                 )}
+
+                <TokenDisplay />
             </header>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">

@@ -47,7 +47,7 @@ export default {
   },
 };
 async function handleGemini(request: Request, env: Env): Promise<Response> {
-  const body = await request.json();
+  const body: { contents: any; model?: string } = await request.json();
   const { contents, model = "gemini-2.5-flash" } = body;
   const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
   const response = await fetch(targetUrl, {
@@ -55,13 +55,25 @@ async function handleGemini(request: Request, env: Env): Promise<Response> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ contents }),
   });
-  const data = await response.json();
-  return new Response(JSON.stringify(data), {
+  const data: any = await response.json();
+  
+  const usage = data.usageMetadata ? {
+    promptTokens: data.usageMetadata.promptTokenCount || 0,
+    completionTokens: data.usageMetadata.candidatesTokenCount || 0,
+    totalTokens: data.usageMetadata.totalTokenCount || 0
+  } : null;
+
+  const responseBody = {
+    ...data,
+    _usage: usage
+  };
+  
+  return new Response(JSON.stringify(responseBody), {
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }
 async function handleGroq(request: Request, env: Env): Promise<Response> {
-  const body = await request.json();
+  const body: { messages: any; model?: string } = await request.json();
   const { messages, model = "llama-3.2-11b-vision-instant" } = body;
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -71,8 +83,20 @@ async function handleGroq(request: Request, env: Env): Promise<Response> {
     },
     body: JSON.stringify({ messages, model, temperature: 0.1, max_tokens: 4096 }),
   });
-  const data = await response.json();
-  return new Response(JSON.stringify(data), {
+  const data: any = await response.json();
+
+  const usage = data.usage ? {
+    promptTokens: data.usage.prompt_tokens || 0,
+    completionTokens: data.usage.completion_tokens || 0,
+    totalTokens: data.usage.total_tokens || 0
+  } : null;
+
+  const responseBody = {
+    ...data,
+    _usage: usage
+  };
+  
+  return new Response(JSON.stringify(responseBody), {
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }

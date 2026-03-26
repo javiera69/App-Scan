@@ -1,5 +1,56 @@
 export type AIProvider = 'gemini' | 'groq';
 
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export interface TokenUsageData {
+  gemini: TokenUsage;
+  groq: TokenUsage;
+  lastUpdated: number;
+}
+
+const STORAGE_KEY = 'tokenUsage';
+
+const getStoredUsage = (): TokenUsageData => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.warn('Failed to read token usage from localStorage', e);
+  }
+  return { gemini: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }, groq: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }, lastUpdated: Date.now() };
+};
+
+const saveUsage = (data: TokenUsageData) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('Failed to save token usage to localStorage', e);
+  }
+};
+
+const addUsage = (provider: AIProvider, usage: TokenUsage) => {
+  const current = getStoredUsage();
+  current[provider] = {
+    promptTokens: current[provider].promptTokens + usage.promptTokens,
+    completionTokens: current[provider].completionTokens + usage.completionTokens,
+    totalTokens: current[provider].totalTokens + usage.totalTokens,
+  };
+  current.lastUpdated = Date.now();
+  saveUsage(current);
+};
+
+export const getTokenUsage = (): TokenUsageData => getStoredUsage();
+
+export const resetTokenUsage = () => {
+  saveUsage({ gemini: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }, groq: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }, lastUpdated: Date.now() });
+};
+
 const WORKER_URL = 'https://ai-proxy.jbetanzos1.workers.dev';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -42,7 +93,10 @@ const extractTextWithGemini = async (base64Data: string, mimeType: string): Prom
                 }]
             })
         });
-        const data = await response.json();
+        const data: any = await response.json();
+        if (data._usage) {
+            addUsage('gemini', data._usage);
+        }
         return data.candidates?.[0]?.content?.parts?.[0]?.text || "No se pudo extraer ningún texto.";
     });
 };
@@ -65,7 +119,10 @@ const analyzeWithGemini = async (text: string, base64Data?: string, mimeType?: s
             })
         });
 
-        const data = await response.json();
+        const data: any = await response.json();
+        if (data._usage) {
+            addUsage('gemini', data._usage);
+        }
         return data.candidates?.[0]?.content?.parts?.[0]?.text || "El análisis falló.";
     });
 };
@@ -106,7 +163,7 @@ const extractTextWithGroq = async (base64Data: string, mimeType: string): Promis
                 });
 
                 if (response.status === 404 || response.status === 400) {
-                    const errorData = await response.json();
+                    const errorData: any = await response.json();
                     const errMsg = errorData.error?.message || '';
                     console.warn(`Groq model ${model} failed (${response.status}): ${errMsg}. Trying next...`);
                     lastError = new Error(errMsg || `Model ${model} failed`);
@@ -114,11 +171,14 @@ const extractTextWithGroq = async (base64Data: string, mimeType: string): Promis
                 }
 
                 if (!response.ok) {
-                    const error = await response.json();
+                    const error: any = await response.json();
                     throw new Error(error.error?.message || 'Error en Groq API');
                 }
 
-                const data = await response.json();
+                const data: any = await response.json();
+                if (data._usage) {
+                    addUsage('groq', data._usage);
+                }
                 return data.choices[0]?.message?.content || "No se pudo extraer ningún texto.";
             } catch (e: any) {
                 lastError = e;
@@ -164,7 +224,7 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
                 });
 
                 if (response.status === 404 || response.status === 400) {
-                    const errorData = await response.json();
+                    const errorData: any = await response.json();
                     const errMsg = errorData.error?.message || '';
                     console.warn(`Groq model ${model} failed (${response.status}): ${errMsg}. Trying next...`);
                     lastError = new Error(errMsg || `Model ${model} failed`);
@@ -172,11 +232,14 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
                 }
 
                 if (!response.ok) {
-                    const error = await response.json();
+                    const error: any = await response.json();
                     throw new Error(error.error?.message || 'Error en Groq API');
                 }
 
-                const data = await response.json();
+                const data: any = await response.json();
+                if (data._usage) {
+                    addUsage('groq', data._usage);
+                }
                 return data.choices[0]?.message?.content || "El análisis falló.";
             } catch (e: any) {
                 lastError = e;
