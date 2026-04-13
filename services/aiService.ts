@@ -62,11 +62,13 @@ async function callWithRetry<T>(fn: () => Promise<T>, maxRetries = 3, initialDel
             return await fn();
         } catch (error: any) {
             lastError = error;
-            const isRateLimit = error?.message?.includes('429') || error?.status === 429 || error?.code === 429 || error?.message?.includes('rate_limit');
+            const msg = error?.message || '';
+            const isRateLimit = msg.includes('429') || error?.status === 429 || error?.code === 429 || msg.includes('rate_limit');
+            const isOverload = msg.includes('503') || error?.status === 503 || msg.includes('UNAVAILABLE') || msg.includes('high demand');
 
-            if (isRateLimit && i < maxRetries) {
+            if ((isRateLimit || isOverload) && i < maxRetries) {
                 const waitTime = initialDelay * Math.pow(2, i);
-                console.warn(`Rate Limit (429). Retrying in ${waitTime}ms... (Attempt ${i + 1}/${maxRetries})`);
+                console.warn(`${isRateLimit ? 'Rate Limit (429)' : 'Overload (503)'}. Retrying in ${waitTime}ms... (Attempt ${i + 1}/${maxRetries})`);
                 await delay(waitTime);
                 continue;
             }
@@ -93,7 +95,12 @@ const extractTextWithGemini = async (base64Data: string, mimeType: string): Prom
                 }]
             })
         });
-        const data: any = await response.json();
+        const data: any = await response.json().catch(() => ({}));
+        if (!response.ok || data.error) {
+            const msg = data.error?.message || `Gemini error (${response.status})`;
+            const status = data.error?.status || '';
+            throw new Error(`${response.status}: ${status} ${msg}`.trim());
+        }
         if (data._usage) {
             addUsage('gemini', data._usage);
         }
@@ -119,7 +126,12 @@ const analyzeWithGemini = async (text: string, base64Data?: string, mimeType?: s
             })
         });
 
-        const data: any = await response.json();
+        const data: any = await response.json().catch(() => ({}));
+        if (!response.ok || data.error) {
+            const msg = data.error?.message || `Gemini error (${response.status})`;
+            const status = data.error?.status || '';
+            throw new Error(`${response.status}: ${status} ${msg}`.trim());
+        }
         if (data._usage) {
             addUsage('gemini', data._usage);
         }
@@ -162,8 +174,8 @@ const extractTextWithGroq = async (base64Data: string, mimeType: string): Promis
                     })
                 });
 
-                if (response.status === 404 || response.status === 400) {
-                    const errorData: any = await response.json();
+                if (response.status === 400 || response.status === 403 || response.status === 404) {
+                    const errorData: any = await response.json().catch(() => ({}));
                     const errMsg = errorData.error?.message || '';
                     console.warn(`Groq model ${model} failed (${response.status}): ${errMsg}. Trying next...`);
                     lastError = new Error(errMsg || `Model ${model} failed`);
@@ -171,21 +183,32 @@ const extractTextWithGroq = async (base64Data: string, mimeType: string): Promis
                 }
 
                 if (!response.ok) {
-                    const error: any = await response.json();
-                    throw new Error(error.error?.message || 'Error en Groq API');
+                    const error: any = await response.json().catch(() => ({}));
+                    throw new Error(error.error?.message || `Error en Groq API (${response.status})`);
                 }
 
-                const data: any = await response.json();
+                const data: any = await response.json().catch(() => ({}));
+
+                // Check for error in body even on 200 (proxy may not forward status)
+                if (data.error) {
+                    const errMsg = data.error.message || 'Groq error';
+                    console.warn(`Groq model ${model} returned error: ${errMsg}. Trying next...`);
+                    lastError = new Error(errMsg);
+                    continue;
+                }
+
                 if (data._usage) {
                     addUsage('groq', data._usage);
                 }
-                return data.choices[0]?.message?.content || "No se pudo extraer ningún texto.";
+                return data.choices?.[0]?.message?.content || "No se pudo extraer ningún texto.";
             } catch (e: any) {
                 lastError = e;
-                const shouldContinue = e.message?.includes('decommissioned')
-                    || e.message?.includes('not found')
-                    || e.message?.includes('does not exist')
-                    || e.message?.includes('invalid image data');
+                const msg = e.message || '';
+                const shouldContinue = msg.includes('decommissioned')
+                    || msg.includes('not found')
+                    || msg.includes('does not exist')
+                    || msg.includes('do not have access')
+                    || msg.includes('invalid image data');
                 if (shouldContinue) continue;
                 throw e;
             }
@@ -223,8 +246,8 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
                     })
                 });
 
-                if (response.status === 404 || response.status === 400) {
-                    const errorData: any = await response.json();
+                if (response.status === 400 || response.status === 403 || response.status === 404) {
+                    const errorData: any = await response.json().catch(() => ({}));
                     const errMsg = errorData.error?.message || '';
                     console.warn(`Groq model ${model} failed (${response.status}): ${errMsg}. Trying next...`);
                     lastError = new Error(errMsg || `Model ${model} failed`);
@@ -232,21 +255,32 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
                 }
 
                 if (!response.ok) {
-                    const error: any = await response.json();
-                    throw new Error(error.error?.message || 'Error en Groq API');
+                    const error: any = await response.json().catch(() => ({}));
+                    throw new Error(error.error?.message || `Error en Groq API (${response.status})`);
                 }
 
-                const data: any = await response.json();
+                const data: any = await response.json().catch(() => ({}));
+
+                // Check for error in body even on 200 (proxy may not forward status)
+                if (data.error) {
+                    const errMsg = data.error.message || 'Groq error';
+                    console.warn(`Groq model ${model} returned error: ${errMsg}. Trying next...`);
+                    lastError = new Error(errMsg);
+                    continue;
+                }
+
                 if (data._usage) {
                     addUsage('groq', data._usage);
                 }
-                return data.choices[0]?.message?.content || "El análisis falló.";
+                return data.choices?.[0]?.message?.content || "El análisis falló.";
             } catch (e: any) {
                 lastError = e;
-                const shouldContinue = e.message?.includes('decommissioned')
-                    || e.message?.includes('not found')
-                    || e.message?.includes('does not exist')
-                    || e.message?.includes('invalid image data');
+                const msg = e.message || '';
+                const shouldContinue = msg.includes('decommissioned')
+                    || msg.includes('not found')
+                    || msg.includes('does not exist')
+                    || msg.includes('do not have access')
+                    || msg.includes('invalid image data');
                 if (shouldContinue) continue;
                 throw e;
             }
