@@ -75,7 +75,7 @@ async function handleGemini(request: Request, env: Env): Promise<Response> {
 }
 async function handleGroq(request: Request, env: Env): Promise<Response> {
   const body: { messages: any; model?: string } = await request.json();
-  const { messages, model = "llama-3.2-11b-vision-instant" } = body;
+  const { messages, model = "meta-llama/llama-4-scout-17b-16e-instruct" } = body;
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {

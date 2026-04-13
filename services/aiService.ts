@@ -142,9 +142,9 @@ const analyzeWithGemini = async (text: string, base64Data?: string, mimeType?: s
 // --- GROQ IMPLEMENTATION ---
 
 const GROQ_VISION_MODELS = [
-    'llama-3.2-11b-vision-instant',
-    'llama-3.2-90b-vision-instant',
     'meta-llama/llama-4-scout-17b-16e-instruct',
+    'llama-3.2-90b-vision-instant',
+    'llama-3.2-11b-vision-instant',
 ];
 
 const shouldRetryNextModel = (message?: string): boolean => {
