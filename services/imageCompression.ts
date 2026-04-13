@@ -54,8 +54,9 @@ export async function compressImageToBase64(
   const base64 = base64DataUrl.split(',')[1] ?? '';
 
   if (base64.length > SIZE_WARNING_THRESHOLD) {
+    const approxSizeKB = Math.round((base64.length * 3) / (4 * 1024));
     console.warn(
-      `[imageCompression] Compressed image is still large (${(base64.length / 1024).toFixed(0)} KB base64). ` +
+      `[imageCompression] Compressed image is still large (~${approxSizeKB} KB). ` +
       `The request may fail due to payload size limits.`
     );
   }
