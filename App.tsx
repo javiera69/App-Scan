@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { extractTextFromDocument, analyzeDocumentContent, AIProvider } from './services/aiService';
+import { compressImageToBase64 } from './services/imageCompression';
 import { Camera, FileText, Upload, Loader2, Sparkles, BrainCircuit, Copy, Share, ArrowLeft, Download, Cloud, ChevronRight, Plus, Clock, Settings, X, Check, AlertCircle } from 'lucide-react';
 import TokenDisplay from './components/TokenDisplay';
 
@@ -385,11 +386,22 @@ const App = () => {
         setProcessing({ status: 'uploading', message: 'Leyendo archivo...' });
 
         try {
-            const base64Data = await fileToBase64(file);
-            setRawFile({ data: base64Data, mimeType: file.type });
+            const isImage = file.type.startsWith('image/');
+            let base64Data: string;
+            let mimeType = file.type;
+
+            if (isImage) {
+                setProcessing({ status: 'uploading', message: 'Comprimiendo imagen...' });
+                base64Data = await compressImageToBase64(file);
+                mimeType = 'image/jpeg';
+            } else {
+                base64Data = await fileToBase64(file);
+            }
+
+            setRawFile({ data: base64Data, mimeType });
 
             setProcessing({ status: 'ocr', message: `Extrayendo texto con ${provider === 'gemini' ? 'Gemini' : 'Llama (Groq)'}...` });
-            const text = await extractTextFromDocument(base64Data, file.type, provider);
+            const text = await extractTextFromDocument(base64Data, mimeType, provider);
 
             const newDoc = {
                 id: Date.now().toString(),
