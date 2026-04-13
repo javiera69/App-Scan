@@ -69,6 +69,7 @@ async function handleGemini(request: Request, env: Env): Promise<Response> {
   };
   
   return new Response(JSON.stringify(responseBody), {
+    status: response.status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }
@@ -97,6 +98,7 @@ async function handleGroq(request: Request, env: Env): Promise<Response> {
   };
   
   return new Response(JSON.stringify(responseBody), {
+    status: response.status,
     headers: { "Content-Type": "application/json", ...CORS_HEADERS },
   });
 }
