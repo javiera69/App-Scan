@@ -147,6 +147,15 @@ const GROQ_VISION_MODELS = [
     'meta-llama/llama-4-scout-17b-16e-instruct',
 ];
 
+const shouldRetryNextModel = (message?: string): boolean => {
+    if (!message) return false;
+    return message.includes('decommissioned')
+        || message.includes('not found')
+        || message.includes('does not exist')
+        || message.includes('do not have access')
+        || message.includes('invalid image data');
+};
+
 const extractTextWithGroq = async (base64Data: string, mimeType: string): Promise<string> => {
     return callWithRetry(async () => {
         if (mimeType.includes('pdf')) {
@@ -191,7 +200,7 @@ const extractTextWithGroq = async (base64Data: string, mimeType: string): Promis
 
                 // Check for error in body even on 200 (proxy may not forward status)
                 if (data.error) {
-                    const errMsg = data.error.message || 'Groq error';
+                    const errMsg = data.error.message || `Groq error (model: ${model})`;
                     console.warn(`Groq model ${model} returned error: ${errMsg}. Trying next...`);
                     lastError = new Error(errMsg);
                     continue;
@@ -203,13 +212,7 @@ const extractTextWithGroq = async (base64Data: string, mimeType: string): Promis
                 return data.choices?.[0]?.message?.content || "No se pudo extraer ningún texto.";
             } catch (e: any) {
                 lastError = e;
-                const msg = e.message || '';
-                const shouldContinue = msg.includes('decommissioned')
-                    || msg.includes('not found')
-                    || msg.includes('does not exist')
-                    || msg.includes('do not have access')
-                    || msg.includes('invalid image data');
-                if (shouldContinue) continue;
+                if (shouldRetryNextModel(e.message)) continue;
                 throw e;
             }
         }
@@ -263,7 +266,7 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
 
                 // Check for error in body even on 200 (proxy may not forward status)
                 if (data.error) {
-                    const errMsg = data.error.message || 'Groq error';
+                    const errMsg = data.error.message || `Groq error (model: ${model})`;
                     console.warn(`Groq model ${model} returned error: ${errMsg}. Trying next...`);
                     lastError = new Error(errMsg);
                     continue;
@@ -275,13 +278,7 @@ const analyzeWithGroq = async (text: string, base64Data?: string, mimeType?: str
                 return data.choices?.[0]?.message?.content || "El análisis falló.";
             } catch (e: any) {
                 lastError = e;
-                const msg = e.message || '';
-                const shouldContinue = msg.includes('decommissioned')
-                    || msg.includes('not found')
-                    || msg.includes('does not exist')
-                    || msg.includes('do not have access')
-                    || msg.includes('invalid image data');
-                if (shouldContinue) continue;
+                if (shouldRetryNextModel(e.message)) continue;
                 throw e;
             }
         }
